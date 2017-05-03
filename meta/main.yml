@@ -2,10 +2,6 @@ galaxy_info:
   author: Stefan Horning
   description: Role to make website hosting on s3 with cloudfront delivery easy.
   company: Mediapeers
-
-  # If the issue tracker for your role is not on github, uncomment the
-  # next line and provide a value
-  # issue_tracker_url: http://example.com/issue/tracker
   license: BSD
   min_ansible_version: 2.2
   github_branch: master
