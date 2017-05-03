@@ -34,7 +34,7 @@
   debug:
     msg: " {{ cloudfront_policy_json }} "
 
-- name: Create Cloudfront Admin Frontend distribution
+- name: Create Cloudfront Website distribution
   cloudfront:
     type: distribution
     state: present
