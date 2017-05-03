@@ -1,6 +1,15 @@
 ---
 # defaults file for mediapeers.s3-website-hosting
 
+# S3 bucket settings:
 s3_website_bucket_name: 'my-website-s3-bucket'
-s3_website_domain_name: 'custom-domain.org'
+s3_website_bucket_region: 'us-east-1'
+# doman names should be covered by the given TSL certificate:
+s3_website_alias_domain_names:
+  - 'custom-domain.org'
+  - 'other-domain.org'
+# Use TLS certificate created with AWS certificate manager (ACM):
 s3_website_certificate_arn: 'tls-certificate-arn-for-cloudwatch'
+
+# Root documents for your website:
+s3_website_root_object: 'index.html'

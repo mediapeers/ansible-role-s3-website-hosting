@@ -1,2 +1,68 @@
 ---
 # tasks file for mediapeers.s3-website-hosting
+
+- name: Name of the website s3 bucket that will be used
+  debug:
+    var: s3_website_bucket_name
+
+- name: Create S3 bucket for website hosting
+  s3_bucket:
+    name: "{{ s3_website_bucket_name }}"
+    policy: "{{ lookup('template', 's3_read_website_bucket.json.j2') }}"
+    state: present
+    region: "{{ s3_website_bucket_region }}"
+  register: website_bucket
+
+- name: S3 bucket details
+  debug:
+    var: website_bucket
+
+- name: Setup bucket for website hosting
+  s3_website:
+    name: "{{ website_bucket.name }}"
+    suffix: "{{ s3_website_root_object }}"
+    state: present
+
+- name: Output Website domains
+  debug:
+    var: s3_website_alias_domain_names
+
+- set_fact:
+    cloudfront_policy_json: "{{ lookup('template', 'web_distribution.json.j2') }}"
+
+- name: Show policy JSON to be used to create Cloudfront distribtion
+  debug:
+    msg: " {{ cloudfront_policy_json }} "
+
+- name: Create Cloudfront Admin Frontend distribution
+  cloudfront:
+    type: distribution
+    state: present
+    # Ensure that Ansible doesn't parse your JSON into a dict (keep outer spaces and to_json)
+    # See https://github.com/ansible/ansible/issues/7005#issuecomment-42894813
+    policy: " {{ cloudfront_policy_json|to_json }} "
+  register: cloudfront_website_distribution
+
+- name: Save Cloudfront Domain and ID in variables
+  set_fact:
+    cloudfront_domain: "{{ cloudfront_website_distribution.result.Distribution.DomainName }}"
+    cloudfront_id: "{{ cloudfront_website_distribution.result.Distribution.Id }}"
+
+- name: Output Cloudfront domain
+  debug: var=cloudfront_domain
+
+- name: Output Cloudfront ID
+  debug: var=cloudfront_id
+
+- name: Create DNS alias for CloudFront distribution on Route53
+  route53:
+    command: create
+    zone: "{{ items | split('.') | last }}"
+    record: "{{ item }}"
+    type: A
+    value: "{{ cloudfront_domain }}"
+    alias: True
+    overwrite: True
+    alias_hosted_zone_id: "{{ cloudfront_hosted_zone_id }}"
+  with_items: '{{ s3_website_alias_domain_names }}'
+
