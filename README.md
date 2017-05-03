@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mediapeers/ansible-role-s3-website-hosting.svg?branch=master)](https://travis-ci.org/mediapeers/ansible-role-s3-website-hosting)
+
 # Website hosting on S3 with Cloudfront as CDN
 For hosting a website on s3 using custum domains and TLS certificates for delivering it through https with the help of cloudfront.
 
