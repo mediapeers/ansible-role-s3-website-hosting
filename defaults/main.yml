@@ -10,6 +10,7 @@ s3_website_alias_domain_names:
   - 'other-domain.org'
 # Use TLS certificate created with AWS certificate manager (ACM):
 s3_website_certificate_arn: 'tls-certificate-arn-for-cloudwatch'
+s3_website_create_dns_record: true
 
 # Root documents for your website:
 s3_website_root_object: 'index.html'

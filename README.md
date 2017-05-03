@@ -19,6 +19,7 @@ The following variables can be set:
 `s3_website_bucket_region: 'us-east-1'` - Set your buckets region, defaults to us-east-1
 `s3_website_alias_domain_names: ['custom-domain.org']` - Set your the domain(s) your Wedbsite should be reachable under. Needs overwriting!
 `s3_website_certificate_arn: 'tls-certificate-arn-for-cloudwatch'` - Set the TLS certificate you already setup in ACM for the domains. Use the Certificates ARN here. Needed for HTTPs to work!
+`s3_website_create_dns_record: true` - Set false to not create a Route53 DNS record, like when domain is managed elsewhere
 `s3_website_root_object: 'index.html'` - Root document for your website. Defaults to index.html
 
 # Root documents for your website:
