@@ -1,0 +1,23 @@
+---
+sudo: required
+dist: trusty
+language: python
+python: "2.7"
+
+before_install:
+  - sudo apt-get update -qq
+
+install:
+  # Install serverspec:
+  #- ruby -v
+  #- gem install serverspec
+  # Install Ansible:
+  - pip install ansible
+  - ansible --version
+
+  # Add ansible.cfg to pick up roles path.
+  - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
+
+script:
+  # Check the role/playbook's syntax.
+  - "ansible-playbook -i tests/inventory tests/$SITE --syntax-check"
