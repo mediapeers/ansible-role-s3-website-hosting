@@ -1,0 +1,6 @@
+---
+# defaults file for mediapeers.s3-website-hosting
+
+s3_website_bucket_name: 'my-website-s3-bucket'
+s3_website_domain_name: 'custom-domain.org'
+s3_website_certificate_arn: 'tls-certificate-arn-for-cloudwatch'
