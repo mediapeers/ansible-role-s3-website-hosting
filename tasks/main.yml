@@ -41,7 +41,25 @@
     # Ensure that Ansible doesn't parse your JSON into a dict (keep outer spaces and to_json)
     # See https://github.com/ansible/ansible/issues/7005#issuecomment-42894813
     policy: " {{ cloudfront_policy_json|to_json }} "
+  ignore_errors: true
   register: cloudfront_website_distribution
+
+- name: Get Cloudfront facts of distribution was already present
+  cloudfront_facts:
+    distribution: true
+    domain_name_alias: '{{ s3_website_alias_domain_names | first }}'
+  register: cloudfront_website_distribution_tmp
+  when:
+    - cloudfront_website_distribution.failed is defined
+    - cloudfront_website_distribution.failed
+
+- name: Assign cloudfront result variable from facts
+  set_fact:
+    cloudfront_website_distribution:
+      result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_website_distribution_tmp.ansible_facts.cloudfront.keys().0] }}"
+  when:
+    - cloudfront_website_distribution.failed is defined
+    - cloudfront_website_distribution.failed
 
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
@@ -57,7 +75,7 @@
 - name: Create DNS alias for CloudFront distribution on Route53
   route53:
     command: create
-    zone: "{{ items | split('.') | last }}"
+    zone: "{{ item.split('.')[-2:] | join('.') }}"
     record: "{{ item }}"
     type: A
     value: "{{ cloudfront_domain }}"
@@ -65,4 +83,4 @@
     overwrite: True
     alias_hosted_zone_id: "{{ cloudfront_hosted_zone_id }}"
   with_items: '{{ s3_website_alias_domain_names }}'
-  when: '{{ s3_website_create_dns_record }}'
+  when: s3_website_create_dns_record
