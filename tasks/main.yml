@@ -44,7 +44,7 @@
   ignore_errors: true
   register: cloudfront_website_distribution
 
-- name: Get Cloudfront facts of distribution was already present
+- name: Get Cloudfront facts if distribution was already present
   cloudfront_facts:
     distribution: true
     domain_name_alias: '{{ s3_website_alias_domain_names | first }}'
