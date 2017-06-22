@@ -50,9 +50,9 @@
       },
       "QueryString": false
     },
-    "MaxTTL": 31536000,
+    "MaxTTL": {{ s3_website_caching_max_ttl }},
     "SmoothStreaming": false,
-    "DefaultTTL": 86400,
+    "DefaultTTL": {{ s3_website_caching_default_ttl }},
     "AllowedMethods": {
       "Items": [
         "HEAD",
