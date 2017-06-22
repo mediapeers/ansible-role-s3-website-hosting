@@ -4,7 +4,7 @@
 # S3 bucket settings:
 s3_website_bucket_name: 'my-website-s3-bucket'
 s3_website_bucket_region: 'us-east-1'
-# doman names should be covered by the given TSL certificate:
+# Domain names should be covered by the given TLS certificate:
 s3_website_alias_domain_names:
   - 'custom-domain.org'
   - 'other-domain.org'
@@ -14,3 +14,11 @@ s3_website_create_dns_record: true
 
 # Root documents for your website:
 s3_website_root_object: 'index.html'
+
+# Cloufront cache tuning:
+
+# max seconds items can stay in the cache
+s3_website_caching_max_ttl: 2592000 # 30 days (AWS defaults to 365 days)
+
+# seconds after which the origin is checked for a change
+s3_website_caching_default_ttl: 86400 # 1 day (AWS default)
