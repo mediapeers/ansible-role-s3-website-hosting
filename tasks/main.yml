@@ -53,13 +53,19 @@
     - cloudfront_website_distribution.failed is defined
     - cloudfront_website_distribution.failed
 
+- name: Get first cloudfront resuls key
+  set_fact:
+    cloudfront_first_key: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront.keys() | list | sort | first }}"
+  when:
+    - cloudfront_website_distribution_tmp is defined
+    - cloudfront_website_distribution_tmp.ansible_facts is defined
+
 - name: Assign cloudfront result variable from facts
   set_fact:
     cloudfront_website_distribution:
-      result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_website_distribution_tmp.ansible_facts.cloudfront.keys().0] }}"
+      result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_first_key] }}"
   when:
-    - cloudfront_website_distribution.failed is defined
-    - cloudfront_website_distribution.failed
+    - cloudfront_first_key is defined
 
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
