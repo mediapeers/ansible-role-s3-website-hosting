@@ -44,6 +44,13 @@
   ignore_errors: true
   register: cloudfront_website_distribution
 
+- name: Output info
+  debug:
+    msg: "We can't update CNAMEs in existing Cloudfront distribution through Ansible (at the moment). Please ensure all domains those are added: {{ s3_website_alias_domain_names }}"
+  when:
+    - cloudfront_website_distribution.failed is defined
+    - cloudfront_website_distribution.failed
+
 - name: Get Cloudfront facts if distribution was already present
   cloudfront_facts:
     distribution: true
