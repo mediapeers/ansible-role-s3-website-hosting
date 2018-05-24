@@ -25,6 +25,7 @@ The following variables can be set:
 - `s3_website_root_object: 'index.html'` - Root document for your website. Defaults to index.html
 - `s3_website_caching_max_ttl: 2592000` -  max seconds items can stay in the CloudFront cache (AWS defaults to 365 here, this role to 30)
 - `s3_website_caching_default_ttl: 86400` - seconds after which the origin is checked for a change (default to 1 day, also AWS default)
+- `s3_website_price_class: PriceClass_100` - price class for CloudFront distribution
 
 ## Deploy of your website
 To deploy your website you have to upload your websites code into the given bucket created by this role.

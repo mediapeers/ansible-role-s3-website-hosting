@@ -29,7 +29,7 @@
     "Quantity": 1
   },
   "DefaultRootObject": "{{ s3_website_root_object }}",
-  "PriceClass": "PriceClass_100",
+  "PriceClass": "{{ s3_website_price_class }}",
   "Enabled": true,
   "DefaultCacheBehavior": {
     "TrustedSigners": {

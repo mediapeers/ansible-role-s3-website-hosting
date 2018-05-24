@@ -22,3 +22,6 @@ s3_website_caching_max_ttl: 2592000 # 30 days (AWS defaults to 365 days)
 
 # seconds after which the origin is checked for a change
 s3_website_caching_default_ttl: 86400 # 1 day (AWS default)
+
+# PriceClass option for CloudFront
+s3_website_price_class: PriceClass_100
