@@ -73,6 +73,8 @@
       result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_first_key] }}"
   when:
     - cloudfront_first_key is defined
+    - cloudfront_website_distribution_tmp is defined
+    - cloudfront_website_distribution_tmp.ansible_facts is defined
 
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
