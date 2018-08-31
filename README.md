@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mediapeers/ansible-role-s3-website-hosting.svg?branch=master)](https://travis-ci.org/mediapeers/ansible-role-s3-website-hosting)
+[![Build Status](https://travis-ci.com/mediapeers/ansible-role-s3-website-hosting.svg?branch=master)](https://travis-ci.com/mediapeers/ansible-role-s3-website-hosting)
 
 # Website hosting on S3 with Cloudfront as CDN
 Role for static website hosting on AWS using S3 for storage and CloudFront for distribution over HTTPs.
