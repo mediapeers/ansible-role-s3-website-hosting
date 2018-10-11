@@ -26,6 +26,7 @@ The following variables can be set:
 - `s3_website_caching_max_ttl: 2592000` -  max seconds items can stay in the CloudFront cache (AWS defaults to 365 here, this role to 30)
 - `s3_website_caching_default_ttl: 86400` - seconds after which the origin is checked for a change (default to 1 day, also AWS default)
 - `s3_website_price_class: PriceClass_100` - price class for CloudFront distribution
+- `s3_website_cloudfront_lambda_arn` - Set to a valid Lambda ARN that will be included into the Cloudfront config (Lambda@Edge function). By default this variable is undefined.
 
 ## Deploy of your website
 To deploy your website you have to upload your websites code into the given bucket created by this role.

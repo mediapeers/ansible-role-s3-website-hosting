@@ -32,7 +32,7 @@
 
 - name: Show policy JSON to be used to create Cloudfront distribtion
   debug:
-    msg: " {{ cloudfront_policy_json }} "
+    msg: "{{ cloudfront_policy_json }}"
 
 - name: Create Cloudfront Website distribution
   cloudfront:
