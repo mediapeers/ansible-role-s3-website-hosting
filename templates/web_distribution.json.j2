@@ -37,6 +37,18 @@
       "Quantity": 0
     },
     "TargetOriginId": "S3-{{ s3_website_bucket_name }}",
+    {% if s3_website_cloudfront_lambda_arn is defined %}
+    "LambdaFunctionAssociations": {
+      "Items": [
+        {
+          "EventType": "origin-response",
+          "LambdaFunctionARN": "{{ s3_website_cloudfront_lambda_arn }}",
+          "IncludeBody": false
+        }
+      ],
+      "Quantity": 1
+    },
+    {% endif %}
     "ViewerProtocolPolicy": "redirect-to-https",
     "ForwardedValues": {
       "Headers": {
