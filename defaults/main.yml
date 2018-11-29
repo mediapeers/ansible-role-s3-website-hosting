@@ -16,18 +16,21 @@ s3_website_create_dns_record: true
 s3_website_root_object: 'index.html'
 
 # Cloufront cache tuning:
-
 # max seconds items can stay in the cache
 s3_website_caching_max_ttl: 2592000 # 30 days (AWS defaults to 365 days)
-
 # seconds after which the origin is checked for a change
 s3_website_caching_default_ttl: 86400 # 1 day (AWS default)
+
+# Other cloudfront settings:
+
+# TLS protocol policy string for Clodufront config
+s3_website_cloudfront_tls_policy: TLSv1.1_2016
 
 # PriceClass option for CloudFront
 s3_website_price_class: PriceClass_100
 
 # Cloudfront Lambda function (aka Lambda@Edge)
 # useful for example to return custom headers (security headers etc.)
-
-# Define this variable to add lambda function to the Cloudfront distribution:
-# s3_website_cloudfront_lambda_arn: arn:aws:lambda:us-east-1:123123123:function:my-function-name:10
+s3_website_cloudfront_lambda_functions: []
+# Add dicts to this list like this to add lambda function to the Cloudfront distribution:
+# { lambda_function_arn: arn:aws:lambda:us-east-1:123123123:function:my-function-name:10, event_type: 'origin-response' }

@@ -17,7 +17,7 @@
   debug:
     var: website_bucket
 
-- name: Setup bucket for website hosting
+- name: Configure S3 bucket for website hosting
   s3_website:
     name: "{{ website_bucket.name }}"
     suffix: "{{ s3_website_root_object }}"
@@ -27,21 +27,49 @@
   debug:
     var: s3_website_alias_domain_names
 
-- set_fact:
-    cloudfront_policy_json: "{{ lookup('template', 'web_distribution.json.j2') }}"
-
-- name: Show policy JSON to be used to create Cloudfront distribtion
-  debug:
-    msg: "{{ cloudfront_policy_json }}"
-
 - name: Create Cloudfront Website distribution
-  cloudfront:
-    type: distribution
+  cloudfront_distribution:
+    origins:
+      - id: 'S3-{{ s3_website_bucket_name }}'
+        domain_name: '{{ s3_website_bucket_name }}.s3-website-{{ s3_website_bucket_region }}.amazonaws.com'
+        custom_origin_config:
+          origin_protocol_policy: 'http-only'
+          http_port: 80
+          https_port: 443
+        custom_headers: []
+    default_root_object: "{{ s3_website_root_object }}"
+    price_class: "{{ s3_website_price_class }}"
+    enabled: true
+    default_cache_behavior:
+      target_origin_id: 'S3-{{ s3_website_bucket_name }}'
+      viewer_protocol_policy: 'redirect-to-https'
+      allowed_methods:
+        items:
+          - HEAD
+          - GET
+        cached_methods:
+          - HEAD
+          - GET
+      min_ttl: 0
+      default_ttl: "{{ s3_website_caching_default_ttl }}"
+      max_ttl: "{{ s3_website_caching_max_ttl }}"
+      compress: true
+      smooth_streaming: false
+      forwarded_values:
+        query_string: false
+        headers: []
+        cookies: { forwards: 'none' }
+        query_string_cache_keys: []
+      lambda_function_associations: "{{ s3_website_cloudfront_lambda_functions }}"
+      trusted_signers: { enabled: false, items: [] }
+    viewer_certificate:
+      ssl_support_method: 'sni-only'
+      minimum_protocol_version: "{{ s3_website_cloudfront_tls_policy }}"
+      certificate: "{{ s3_website_certificate_arn }}"
+      acm_certificate_arn: "{{ s3_website_certificate_arn }}"
+      certificate_source: 'acm'
+    caller_reference: 'web-fe-distribution-{{ ansible_date_time.epoch }}'
     state: present
-    # Ensure that Ansible doesn't parse your JSON into a dict (keep outer spaces and to_json)
-    # See https://github.com/ansible/ansible/issues/7005#issuecomment-42894813
-    policy: " {{ cloudfront_policy_json|to_json }} "
-  ignore_errors: true
   register: cloudfront_website_distribution
 
 - name: Output info

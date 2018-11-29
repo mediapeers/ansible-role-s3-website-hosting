@@ -6,13 +6,10 @@ Role for static website hosting on AWS using S3 for storage and CloudFront for d
 This role sets up the S3 bucket with the right configuration and then creates a CloudFront distribution using that bucket as a origin.
 Takes care of bucket permissions, CloudFront origin config and TLS setup, using given CNAMEs and ACM (AWS certificate manager) TLS certificate.
 
-Needs Ansible 2.2.0 or newer.
+Needs Ansible 2.5 or newer for the `cloudfront_distribution` module.
 
 ## Requirements
-Needs the Ansible cloudfront module which is not relased yet, but part of this repo in `files/cloudfront.py`.
-So copy that module to your projects (that include this role) module folder, commonly that's `./library/`.
-
-Also you need a working DNS zone in Route53 and working ACM certificates for the domains you want to use.
+Needs a working DNS zone in Route53 and working ACM certificates for the domains you want to use.
 
 ## Role Variables
 The following variables can be set:
@@ -26,7 +23,7 @@ The following variables can be set:
 - `s3_website_caching_max_ttl: 2592000` -  max seconds items can stay in the CloudFront cache (AWS defaults to 365 here, this role to 30)
 - `s3_website_caching_default_ttl: 86400` - seconds after which the origin is checked for a change (default to 1 day, also AWS default)
 - `s3_website_price_class: PriceClass_100` - price class for CloudFront distribution
-- `s3_website_cloudfront_lambda_arn` - Set to a valid Lambda ARN that will be included into the Cloudfront config (Lambda@Edge function). By default this variable is undefined.
+- `s3_website_cloudfront_lambda_functions: []` - Add dicts to this list you want included into the Cloudfront config (Lambda@Edge function). Each dict item should keys `lambda_function_arn` (with a valid Lambda ARN) and the `event_type` (for example 'orgin-response').
 
 ## Deploy of your website
 To deploy your website you have to upload your websites code into the given bucket created by this role.
@@ -37,7 +34,7 @@ Example with AWS CLI:
 `aws cloudfront create-invalidation --distribution-id XXXXX --invalidation-batch "Paths={Quantity=1,Items=['/index.html']},CallerReference=$(date)"`
 
 ## Dependencies
-Depends on not other Ansible role.
+Depends on no other Ansible role.
 
 ## Example Playbook
 Use the role in your existing playbook like this:
