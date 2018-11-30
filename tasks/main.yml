@@ -29,6 +29,7 @@
 
 - name: Create Cloudfront Website distribution
   cloudfront_distribution:
+    enabled: true
     origins:
       - id: 'S3-{{ s3_website_bucket_name }}'
         domain_name: '{{ s3_website_bucket_name }}.s3-website-{{ s3_website_bucket_region }}.amazonaws.com'
@@ -39,7 +40,8 @@
         custom_headers: []
     default_root_object: "{{ s3_website_root_object }}"
     price_class: "{{ s3_website_price_class }}"
-    enabled: true
+    ipv6_enabled: true
+    cache_behaviors: []
     default_cache_behavior:
       target_origin_id: 'S3-{{ s3_website_bucket_name }}'
       viewer_protocol_policy: 'redirect-to-https'
@@ -62,13 +64,27 @@
         query_string_cache_keys: []
       lambda_function_associations: "{{ s3_website_cloudfront_lambda_functions }}"
       trusted_signers: { enabled: false, items: [] }
+    http_version: 'http2'
+    restrictions:
+      geo_restriction:
+        restriction_type: 'none'
+    custom_error_responses:
+      - { error_code: 403, reponse_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+      - { error_code: 404, reponse_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+    aliases: "{{ s3_website_alias_domain_names }}"
     viewer_certificate:
       ssl_support_method: 'sni-only'
       minimum_protocol_version: "{{ s3_website_cloudfront_tls_policy }}"
       certificate: "{{ s3_website_certificate_arn }}"
       acm_certificate_arn: "{{ s3_website_certificate_arn }}"
       certificate_source: 'acm'
+    comment: 'Created by Ansible s3-website-hosting role'
     caller_reference: 'web-fe-distribution-{{ ansible_date_time.epoch }}'
+    logging:
+      enabled: false
+      enabled include_cookies: false
+      bucket: ''
+      prefix: ''
     state: present
   register: cloudfront_website_distribution
 
