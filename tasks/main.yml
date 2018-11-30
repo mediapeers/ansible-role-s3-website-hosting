@@ -16,6 +16,7 @@
 - name: S3 bucket details
   debug:
     var: website_bucket
+    verbosity: 1
 
 - name: Configure S3 bucket for website hosting
   s3_website:
@@ -26,6 +27,36 @@
 - name: Output Website domains
   debug:
     var: s3_website_alias_domain_names
+
+- name: Search CloudFront distribution based on alias domain names given (task fails if cloudfront still needs creating)
+  cloudfront_facts:
+    distribution: true
+    domain_name_alias: "{{ s3_website_alias_domain_names|first }}"
+  ignore_errors: true
+  register: found_distribution
+
+- name: Extract distribution config if Cloudfront distribution was found
+  set_fact:
+    existing_distribution_config: "{{ found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
+    existing_distribution_id: "{{ found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
+  when: found_distribution.ansible_facts is defined
+
+- name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
+  debug:
+    msg: "Dsitribution-ID: {{ existing_distribution_id }} | Aliases (CNAMES): {{ existing_distribution_config.Aliases.Items }}"
+  when: existing_distribution_config is defined
+
+- set_fact:
+    existing_distribution_config: null
+  when: existing_distribution_config is undefined
+
+- name: Set caller reference to pre-existing one or generate new one for creating new Cloudfront distribution
+  set_fact:
+    cloudfront_caller_reference: "{{ existing_distribution_config.CallerReference | default(generated_cloudfront_caller_reference) }}"
+
+- name: Output caller reference to be used to identify Cloudfront dist
+  debug:
+    var: cloudfront_caller_reference
 
 - name: Create Cloudfront Website distribution
   cloudfront_distribution:
@@ -60,17 +91,14 @@
       forwarded_values:
         query_string: false
         headers: []
-        cookies: { forwards: 'none' }
+        cookies: { forward: 'none' }
         query_string_cache_keys: []
       lambda_function_associations: "{{ s3_website_cloudfront_lambda_functions }}"
       trusted_signers: { enabled: false, items: [] }
     http_version: 'http2'
-    restrictions:
-      geo_restriction:
-        restriction_type: 'none'
     custom_error_responses:
-      - { error_code: 403, reponse_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
-      - { error_code: 404, reponse_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+      - { error_code: 403, response_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+      - { error_code: 404, response_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
     aliases: "{{ s3_website_alias_domain_names }}"
     viewer_certificate:
       ssl_support_method: 'sni-only'
@@ -79,51 +107,23 @@
       acm_certificate_arn: "{{ s3_website_certificate_arn }}"
       certificate_source: 'acm'
     comment: 'Created by Ansible s3-website-hosting role'
-    caller_reference: 'web-fe-distribution-{{ ansible_date_time.epoch }}'
+    caller_reference: "{{ cloudfront_caller_reference }}"
     logging:
       enabled: false
-      enabled include_cookies: false
+      include_cookies: false
       bucket: ''
       prefix: ''
     state: present
   register: cloudfront_website_distribution
 
-- name: Output info
+- name: Output result diff
   debug:
-    msg: "We can't update CNAMEs in existing Cloudfront distribution through Ansible (at the moment). Please ensure all domains those are added: {{ s3_website_alias_domain_names }}"
-  when:
-    - cloudfront_website_distribution.failed is defined
-    - cloudfront_website_distribution.failed
-
-- name: Get Cloudfront facts if distribution was already present
-  cloudfront_facts:
-    distribution: true
-    domain_name_alias: '{{ s3_website_alias_domain_names | first }}'
-  register: cloudfront_website_distribution_tmp
-  when:
-    - cloudfront_website_distribution.failed is defined
-    - cloudfront_website_distribution.failed
-
-- name: Get first cloudfront resuls key
-  set_fact:
-    cloudfront_first_key: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront.keys() | list | sort | first }}"
-  when:
-    - cloudfront_website_distribution_tmp is defined
-    - cloudfront_website_distribution_tmp.ansible_facts is defined
-
-- name: Assign cloudfront result variable from facts
-  set_fact:
-    cloudfront_website_distribution:
-      result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_first_key] }}"
-  when:
-    - cloudfront_first_key is defined
-    - cloudfront_website_distribution_tmp is defined
-    - cloudfront_website_distribution_tmp.ansible_facts is defined
+    var: cloudfront_website_distribution.diff
 
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
-    cloudfront_domain: "{{ cloudfront_website_distribution.result.Distribution.DomainName }}"
-    cloudfront_id: "{{ cloudfront_website_distribution.result.Distribution.Id }}"
+    cloudfront_domain: "{{ cloudfront_website_distribution.domain_name }}"
+    cloudfront_id: "{{ cloudfront_website_distribution.id }}"
 
 - name: Output Cloudfront domain
   debug: var=cloudfront_domain
