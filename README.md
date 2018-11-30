@@ -11,10 +11,11 @@ Needs Ansible 2.5 or newer for the `cloudfront_distribution` module.
 ## Requirements
 Needs a working DNS zone in Route53 and working ACM certificates for the domains you want to use.
 
-Also as Cloudfront Ansible modules don't work perfectly yet, you have to backport them into your configured [library dir](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html#bundling-ansible-modules-with-playbooks) (until they make into a release).
+Also as Cloudfront Ansible modules don't work perfectly yet, you have to backport them into your
+configured [library dir](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html#bundling-ansible-modules-with-playbooks) (until they make it into a release).
 
 - To fix the `cloudfront_distribution` module fetch the one from here https://gist.github.com/kirkdave/1f4ae95ee92c750b68a79b2a437e2e65 (see [related ticket](https://github.com/ansible/ansible/issues/45043#issuecomment-425843218))
-- To make `cloudfront_facts` more usable apply those changes: https://github.com/ansible/ansible/pull/49061
+- To fix `cloudfront_facts` return values you have to apply those changes: https://github.com/ansible/ansible/pull/49061
 
 ## Role Variables
 The following variables can be set:
