@@ -24,6 +24,9 @@ The following variables can be set:
 - `s3_website_caching_default_ttl: 86400` - seconds after which the origin is checked for a change (default to 1 day, also AWS default)
 - `s3_website_price_class: PriceClass_100` - price class for CloudFront distribution
 - `s3_website_cloudfront_lambda_functions: []` - Add dicts to this list you want included into the Cloudfront config (Lambda@Edge function). Each dict item should keys `lambda_function_arn` (with a valid Lambda ARN) and the `event_type` (for example 'orgin-response').
+- `s3_website_cloudfront_tls_policy: TLSv1.1_2016` - AWS managed TLS version and cipher policy for Cloudfront. Check AWS [CloudFront docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-protocols-ciphers.html) which are available.
+
+For more details also check the `defaults/main.yml` file.
 
 ## Deploy of your website
 To deploy your website you have to upload your websites code into the given bucket created by this role.
