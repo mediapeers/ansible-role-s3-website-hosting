@@ -16,8 +16,9 @@
 - name: S3 bucket details
   debug:
     var: website_bucket
+    verbosity: 1
 
-- name: Setup bucket for website hosting
+- name: Configure S3 bucket for website hosting
   s3_website:
     name: "{{ website_bucket.name }}"
     suffix: "{{ s3_website_root_object }}"
@@ -27,59 +28,102 @@
   debug:
     var: s3_website_alias_domain_names
 
-- set_fact:
-    cloudfront_policy_json: "{{ lookup('template', 'web_distribution.json.j2') }}"
-
-- name: Show policy JSON to be used to create Cloudfront distribtion
-  debug:
-    msg: "{{ cloudfront_policy_json }}"
-
-- name: Create Cloudfront Website distribution
-  cloudfront:
-    type: distribution
-    state: present
-    # Ensure that Ansible doesn't parse your JSON into a dict (keep outer spaces and to_json)
-    # See https://github.com/ansible/ansible/issues/7005#issuecomment-42894813
-    policy: " {{ cloudfront_policy_json|to_json }} "
-  ignore_errors: true
-  register: cloudfront_website_distribution
-
-- name: Output info
-  debug:
-    msg: "We can't update CNAMEs in existing Cloudfront distribution through Ansible (at the moment). Please ensure all domains those are added: {{ s3_website_alias_domain_names }}"
-  when:
-    - cloudfront_website_distribution.failed is defined
-    - cloudfront_website_distribution.failed
-
-- name: Get Cloudfront facts if distribution was already present
+- name: Search CloudFront distribution based on alias domain names given (task fails if cloudfront still needs creating)
   cloudfront_facts:
     distribution: true
-    domain_name_alias: '{{ s3_website_alias_domain_names | first }}'
-  register: cloudfront_website_distribution_tmp
-  when:
-    - cloudfront_website_distribution.failed is defined
-    - cloudfront_website_distribution.failed
+    domain_name_alias: "{{ s3_website_alias_domain_names|first }}"
+  ignore_errors: true
+  register: found_distribution
 
-- name: Get first cloudfront resuls key
+- name: Extract distribution config if Cloudfront distribution was found
   set_fact:
-    cloudfront_first_key: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront.keys() | list | sort | first }}"
-  when:
-    - cloudfront_website_distribution_tmp is defined
-    - cloudfront_website_distribution_tmp.ansible_facts is defined
+    existing_distribution_config: "{{ found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
+    existing_distribution_id: "{{ found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
+  when: found_distribution.ansible_facts is defined
 
-- name: Assign cloudfront result variable from facts
+- name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
+  debug:
+    msg: "Dsitribution-ID: {{ existing_distribution_id }} | Aliases (CNAMES): {{ existing_distribution_config.Aliases.Items }}"
+  when: existing_distribution_config is defined
+
+- set_fact:
+    existing_distribution_config: null
+  when: existing_distribution_config is undefined
+
+- name: Set caller reference to pre-existing one or generate new one for creating new Cloudfront distribution
   set_fact:
-    cloudfront_website_distribution:
-      result: "{{ cloudfront_website_distribution_tmp.ansible_facts.cloudfront[cloudfront_first_key] }}"
-  when:
-    - cloudfront_first_key is defined
-    - cloudfront_website_distribution_tmp is defined
-    - cloudfront_website_distribution_tmp.ansible_facts is defined
+    cloudfront_caller_reference: "{{ existing_distribution_config.CallerReference | default(generated_cloudfront_caller_reference) }}"
+
+- name: Output caller reference to be used to identify Cloudfront dist
+  debug:
+    var: cloudfront_caller_reference
+
+- name: Create Cloudfront Website distribution
+  cloudfront_distribution:
+    enabled: true
+    origins:
+      - id: 'S3-{{ s3_website_bucket_name }}'
+        domain_name: '{{ s3_website_bucket_name }}.s3-website-{{ s3_website_bucket_region }}.amazonaws.com'
+        custom_origin_config:
+          origin_protocol_policy: 'http-only'
+          http_port: 80
+          https_port: 443
+        custom_headers: []
+    default_root_object: "{{ s3_website_root_object }}"
+    price_class: "{{ s3_website_price_class }}"
+    ipv6_enabled: true
+    cache_behaviors: []
+    default_cache_behavior:
+      target_origin_id: 'S3-{{ s3_website_bucket_name }}'
+      viewer_protocol_policy: 'redirect-to-https'
+      allowed_methods:
+        items:
+          - HEAD
+          - GET
+        cached_methods:
+          - HEAD
+          - GET
+      min_ttl: 0
+      default_ttl: "{{ s3_website_caching_default_ttl }}"
+      max_ttl: "{{ s3_website_caching_max_ttl }}"
+      compress: true
+      smooth_streaming: false
+      forwarded_values:
+        query_string: false
+        headers: []
+        cookies: { forward: 'none' }
+        query_string_cache_keys: []
+      lambda_function_associations: "{{ s3_website_cloudfront_lambda_functions }}"
+      trusted_signers: { enabled: false, items: [] }
+    http_version: 'http2'
+    custom_error_responses:
+      - { error_code: 403, response_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+      - { error_code: 404, response_page_path: "/{{ s3_website_root_object }}", response_code: '200', error_caching_min_ttl: 300 }
+    aliases: "{{ s3_website_alias_domain_names }}"
+    viewer_certificate:
+      ssl_support_method: 'sni-only'
+      minimum_protocol_version: "{{ s3_website_cloudfront_tls_policy }}"
+      certificate: "{{ s3_website_certificate_arn }}"
+      acm_certificate_arn: "{{ s3_website_certificate_arn }}"
+      certificate_source: 'acm'
+    comment: 'Created by Ansible s3-website-hosting role'
+    caller_reference: "{{ cloudfront_caller_reference }}"
+    logging:
+      enabled: false
+      include_cookies: false
+      bucket: ''
+      prefix: ''
+    state: present
+  register: cloudfront_website_distribution
+
+- name: Output result diff
+  debug:
+    var: cloudfront_website_distribution.diff
 
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
-    cloudfront_domain: "{{ cloudfront_website_distribution.result.Distribution.DomainName }}"
-    cloudfront_id: "{{ cloudfront_website_distribution.result.Distribution.Id }}"
+    cloudfront_domain: "{{ cloudfront_website_distribution.domain_name }}"
+    cloudfront_id: "{{ cloudfront_website_distribution.id }}"
 
 - name: Output Cloudfront domain
   debug: var=cloudfront_domain
