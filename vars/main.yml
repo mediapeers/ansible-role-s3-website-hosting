@@ -4,5 +4,6 @@
 # Hosted zone ID of Cloudfront for Route53 (static by AWS)
 cloudfront_hosted_zone_id: 'Z2FDTNDATAQYW2'
 
-# Caller reference for Cloudfront distributions to identify them on future updates (has to be unique accross entire account)
-generated_cloudfront_caller_reference: "web-fe-distribution-{{ s3_website_alias_domain_names | join('-') }}"
+# Caller reference for Cloudfront distributions to identify them on future updates (has to be unique accross entire account).
+# Max length of CallerReference allowed by AWS API is 100.
+generated_cloudfront_caller_reference: "web-fe-distribution-{{ s3_website_alias_domain_names | join('-') | truncate(78, True, '') }}"
