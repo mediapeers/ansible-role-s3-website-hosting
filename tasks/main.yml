@@ -39,12 +39,15 @@
 - name: Assign first found element to variable
   set_fact:
     found_distribution: "{{ distribution_search.results | selectattr('failed', 'equalto',  false) | list | first }}"
+  when: distribution_search.results | selectattr('failed', 'equalto',  false) | list | length > 0
 
 - name: Extract distribution config if Cloudfront distribution was found
   set_fact:
     existing_distribution_config: "{{ found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
     existing_distribution_id: "{{ found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
-  when: found_distribution.ansible_facts is defined
+  when:
+    - found_distribution is defined
+    - found_distribution.ansible_facts is defined
 
 - name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
   debug:
