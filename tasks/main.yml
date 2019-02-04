@@ -41,6 +41,10 @@
     found_distribution: "{{ distribution_search.results | selectattr('failed', 'equalto',  false) | list | first }}"
   when: distribution_search.results | selectattr('failed', 'equalto',  false) | list | length > 0
 
+- name: Make sure existing_distribution_config is set to null in case it has been previously set (to not carry over old values)
+  set_fact:
+    existing_distribution_config: null
+
 - name: Extract distribution config if Cloudfront distribution was found
   set_fact:
     existing_distribution_config: "{{ found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
@@ -52,16 +56,21 @@
 - name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
   debug:
     msg: "Distribution-ID: {{ existing_distribution_id }} | Aliases (CNAMES): {{ existing_distribution_config.Aliases.Items }}"
-  when: existing_distribution_config is defined
+  when:
+    - existing_distribution_config is defined
+    - existing_distribution_config is not none
 
 - name: Wait to give time to read above message
   pause:
     seconds: 15
-  when: existing_distribution_config is defined
+  when:
+    - existing_distribution_config is defined
+    - existing_distribution_config is not none
 
 - set_fact:
     existing_distribution_config: null
-  when: existing_distribution_config is undefined
+  when:
+    - existing_distribution_config is undefined
 
 - name: Set caller reference to pre-existing one or generate new one for creating new Cloudfront distribution
   set_fact:
