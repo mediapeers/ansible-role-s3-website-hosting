@@ -36,45 +36,40 @@
   with_items: "{{ s3_website_alias_domain_names }}"
   register: distribution_search
 
+- name: Make sure role internal facts are set to null in case they have been previously set (to not carry over old values)
+  set_fact:
+    s3_website_existing_distribution_config: null
+    s3_website_found_distribution: null
+    s3_website_existing_distribution_id: null
+
 - name: Assign first found element to variable
   set_fact:
-    found_distribution: "{{ distribution_search.results | selectattr('failed', 'equalto',  false) | list | first }}"
+    s3_website_found_distribution: "{{ distribution_search.results | selectattr('failed', 'equalto',  false) | list | first }}"
   when: distribution_search.results | selectattr('failed', 'equalto',  false) | list | length > 0
-
-- name: Make sure existing_distribution_config is set to null in case it has been previously set (to not carry over old values)
-  set_fact:
-    existing_distribution_config: null
 
 - name: Extract distribution config if Cloudfront distribution was found
   set_fact:
-    existing_distribution_config: "{{ found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
-    existing_distribution_id: "{{ found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
+    s3_website_existing_distribution_config: "{{ s3_website_found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
+    s3_website_existing_distribution_id: "{{ s3_website_found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
   when:
-    - found_distribution is defined
-    - found_distribution.ansible_facts is defined
+    - s3_website_found_distribution is not none
+    - s3_website_found_distribution.ansible_facts is defined
 
 - name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
   debug:
-    msg: "Distribution-ID: {{ existing_distribution_id }} | Aliases (CNAMES): {{ existing_distribution_config.Aliases.Items }}"
+    msg: "Distribution-ID: {{ s3_website_existing_distribution_id }} | Aliases (CNAMES): {{ s3_website_existing_distribution_config.Aliases.Items }}"
   when:
-    - existing_distribution_config is defined
-    - existing_distribution_config is not none
+    - s3_website_existing_distribution_config is not none
 
 - name: Wait to give time to read above message
   pause:
     seconds: 15
   when:
-    - existing_distribution_config is defined
-    - existing_distribution_config is not none
-
-- set_fact:
-    existing_distribution_config: null
-  when:
-    - existing_distribution_config is undefined
+    - s3_website_existing_distribution_config is not none
 
 - name: Set caller reference to pre-existing one or generate new one for creating new Cloudfront distribution
   set_fact:
-    cloudfront_caller_reference: "{{ existing_distribution_config.CallerReference | default(generated_cloudfront_caller_reference) }}"
+    cloudfront_caller_reference: "{{ s3_website_existing_distribution_config.CallerReference | default(generated_cloudfront_caller_reference) }}"
 
 - name: Output caller reference to be used to identify Cloudfront dist
   debug:
