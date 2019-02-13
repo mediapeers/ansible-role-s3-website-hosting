@@ -89,6 +89,7 @@
           http_port: 80
           https_port: 443
         custom_headers: []
+    purge_origins: yes
     default_root_object: "{{ s3_website_root_object }}"
     price_class: "{{ s3_website_price_class }}"
     ipv6_enabled: true
