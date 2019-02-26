@@ -149,8 +149,8 @@
   set_fact:
     cloudfront_aliases_diff: "{{ cloudfront_website_distribution.diff.before.Aliases.Items | difference(cloudfront_website_distribution.diff.after.Aliases.Items) }}"
   when:
-    - cloudfront_website_distribution.diff.after
-    - cloudfront_website_distribution.diff.after.Aliases
+    - cloudfront_website_distribution.diff.after is defined
+    - cloudfront_website_distribution.diff.after.Aliases is defined
 
 - name: Output ALIASES diff after update
   debug:
