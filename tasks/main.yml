@@ -142,6 +142,21 @@
   debug:
     var: cloudfront_website_distribution.diff
 
+- set_fact:
+    cloudfront_aliases_diff: []
+
+- name: Look into diff to see if an alias was removed in the update
+  set_fact:
+    cloudfront_aliases_diff: "{{ cloudfront_website_distribution.diff.before.Aliases.Items | difference(cloudfront_website_distribution.diff.after.Aliases.Items) }}"
+  when:
+    - cloudfront_website_distribution.diff.after
+    - cloudfront_website_distribution.diff.after.Aliases
+
+- name: Output ALIASES diff after update
+  debug:
+    var: cloudfront_aliases_diff
+  when: (cloudfront_aliases_diff | length) > 0
+
 - name: Save Cloudfront Domain and ID in variables
   set_fact:
     cloudfront_domain: "{{ cloudfront_website_distribution.domain_name }}"
@@ -153,15 +168,29 @@
 - name: Output Cloudfront ID
   debug: var=cloudfront_id
 
-- name: Create DNS alias for CloudFront distribution on Route53
+- name: Remove now unused DNS records from Route53 (if aliases were removed from Cloudfront)
   route53:
-    command: create
     zone: "{{ item.split('.')[-2:] | join('.') }}"
     record: "{{ item }}"
     type: A
     value: "{{ cloudfront_domain }}"
-    alias: True
-    overwrite: True
+    alias: yes
     alias_hosted_zone_id: "{{ cloudfront_hosted_zone_id }}"
+    state: delete
+  with_items: "{{ cloudfront_aliases_diff }}"
+  when:
+    - (cloudfront_aliases_diff | length) > 0
+    - s3_website_create_dns_record
+
+- name: Create DNS alias for CloudFront distribution on Route53
+  route53:
+    zone: "{{ item.split('.')[-2:] | join('.') }}"
+    record: "{{ item }}"
+    type: A
+    value: "{{ cloudfront_domain }}"
+    alias: yes
+    overwrite: yes
+    alias_hosted_zone_id: "{{ cloudfront_hosted_zone_id }}"
+    state: present
   with_items: '{{ s3_website_alias_domain_names }}'
   when: s3_website_create_dns_record
