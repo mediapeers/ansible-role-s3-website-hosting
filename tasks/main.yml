@@ -149,6 +149,7 @@
   set_fact:
     cloudfront_aliases_diff: "{{ cloudfront_website_distribution.diff.before.Aliases.Items | difference(cloudfront_website_distribution.diff.after.Aliases.Items) }}"
   when:
+    - cloudfront_website_distribution.diff is defined
     - cloudfront_website_distribution.diff.after is defined
     - cloudfront_website_distribution.diff.after.Aliases is defined
 
