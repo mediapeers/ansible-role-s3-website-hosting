@@ -183,7 +183,7 @@
     - (cloudfront_aliases_diff | length) > 0
     - s3_website_create_dns_record
 
-- name: Create DNS alias for CloudFront distribution on Route53
+- name: Create DNS alias for CloudFront distribution on Route53 (using second level zone)
   route53:
     zone: "{{ item.split('.')[-2:] | join('.') }}"
     record: "{{ item }}"
@@ -195,3 +195,23 @@
     state: present
   with_items: '{{ s3_website_alias_domain_names }}'
   when: s3_website_create_dns_record
+  ignore_errors: true
+  register: cloudfront_website_dns_result
+
+- name: Create DNS alias for CloudFront distribution on Route53 (using third leven zone if previous task failed)
+  route53:
+    zone: "{{ item.split('.')[-3:] | join('.') }}"
+    record: "{{ item }}"
+    type: A
+    value: "{{ cloudfront_domain }}"
+    alias: yes
+    overwrite: yes
+    alias_hosted_zone_id: "{{ cloudfront_hosted_zone_id }}"
+    state: present
+  with_items: '{{ s3_website_alias_domain_names }}'
+  when:
+    - s3_website_create_dns_record
+    - cloudfront_website_dns_result is defined
+    - cloudfront_website_dns_result.failed is defined
+    - cloudfront_website_dns_result.failed
+
