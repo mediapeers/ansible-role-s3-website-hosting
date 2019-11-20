@@ -29,7 +29,7 @@
     var: s3_website_alias_domain_names
 
 - name: Search CloudFront distribution based on alias domain names given (task fails if cloudfront still needs creating)
-  cloudfront_facts:
+  cloudfront_info:
     distribution: true
     domain_name_alias: "{{ item }}"
   ignore_errors: true
@@ -49,11 +49,11 @@
 
 - name: Extract distribution config if Cloudfront distribution was found
   set_fact:
-    s3_website_existing_distribution_config: "{{ s3_website_found_distribution.ansible_facts.cloudfront.result.Distribution.DistributionConfig }}"
-    s3_website_existing_distribution_id: "{{ s3_website_found_distribution.ansible_facts.cloudfront.result.DistributionId }}"
+    s3_website_existing_distribution_config: "{{ s3_website_found_distribution.cloudfront.result.Distribution.DistributionConfig }}"
+    s3_website_existing_distribution_id: "{{ s3_website_found_distribution.cloudfront.result.DistributionId }}"
   when:
     - s3_website_found_distribution is not none
-    - s3_website_found_distribution.ansible_facts is defined
+    - s3_website_found_distribution.cloudfront is defined
 
 - name: Output infos of existing CloudFront distribution (confirm if correct one was matched)
   debug:
