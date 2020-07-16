@@ -1,3 +1,5 @@
+**Moved to https://github.com/mediafelows/ansible-role-s3-website-hosting**
+
 [![Build Status](https://travis-ci.com/mediapeers/ansible-role-s3-website-hosting.svg?branch=master)](https://travis-ci.com/mediapeers/ansible-role-s3-website-hosting)
 
 # Website hosting on S3 with Cloudfront as CDN
